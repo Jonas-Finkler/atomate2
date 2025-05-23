@@ -113,7 +113,8 @@ class EquilibriumVolumeMaker(Maker):
             )
             working_outputs = {
                 "relax": {
-                    key: [] for key in ("energy", "volume", "stress", "pressure")
+                    # NOTE: "pressure" is not needed here. It will be computed from stress, since pressure = []
+                    key: [] for key in ("energy", "volume", "stress", "pressure")  
                 }
             }
 
@@ -122,8 +123,9 @@ class EquilibriumVolumeMaker(Maker):
             self.postprocessor.fit(working_outputs)
             working_outputs = dict(self.postprocessor.results)
             flow_output = {"working_outputs": working_outputs.copy(), "structure": None}
-            for k in ("pressure", "energy"):
-                working_outputs["relax"].pop(k, None)
+
+            # NOTE: Make sure, that pressure is recomputed from the stress after addition of new samples
+            working_outputs["relax"].pop("pressure", None)
 
             # Stop flow here if EOS cannot be fit
             if (v0 := working_outputs.get("V0")) is None:
