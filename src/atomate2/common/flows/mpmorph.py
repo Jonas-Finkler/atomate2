@@ -113,7 +113,7 @@ class EquilibriumVolumeMaker(Maker):
             )
             working_outputs = {
                 "relax": {
-                    key: [] for key in ("energies", "volume", "stress", "pressure")
+                    key: [] for key in ("energy", "volume", "stress", "pressure")
                 }
             }
 
@@ -166,7 +166,7 @@ class EquilibriumVolumeMaker(Maker):
             relaxed_vol = len(working_outputs["relax"]["volume"])
             md_job.name = f"{self.name} {md_job.name} {relaxed_vol + 1}"
 
-            working_outputs["relax"]["energies"].append(md_job.output.output.energy)
+            working_outputs["relax"]["energy"].append(md_job.output.output.energy)
             working_outputs["relax"]["volume"].append(md_job.output.structure.volume)
             working_outputs["relax"]["stress"].append(md_job.output.output.stress)
             eos_jobs.append(md_job)
