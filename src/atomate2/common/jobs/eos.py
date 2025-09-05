@@ -338,39 +338,50 @@ class PostProcessEosPressure(EOSPostProcessor):
                     1.0 / 3.0 * np.trace(np.array(stress_tensor))
                     for stress_tensor in self.results[jobtype]["stress"]
                 ]
+
+            # NOTE: The old method of fitting produces unstable initial guesses (large values for b1)
             poly_pars = np.polyfit(
                 self.results[jobtype]["volume"],
-                np.array(self.results[jobtype]["pressure"])
-                / np.array(self.results[jobtype]["volume"]),
-                deg=2,
+                np.array(self.results[jobtype]["pressure"]),
+                deg=1,
             )
+            v0 = -poly_pars[1] / poly_pars[0]
+            b0 = -v0 * poly_pars[0]
+            init_pars[jobtype] = [b0, 4.0, v0]
 
-            radicand = poly_pars[1] ** 2 - 4.0 * poly_pars[0] * poly_pars[2]
-            if radicand < 0.0:
-                v0 = self.results[jobtype]["volume"][
-                    np.argmin(self.results[jobtype]["energy"])
-                ]
-            else:
-                min_abs_pressure = 1e20
-                for i in range(2):
-                    _v0 = (-poly_pars[1] + (-1) ** i * radicand ** (0.5)) / (
-                        2.0 * poly_pars[0]
-                    )
-                    pressure = _v0 * np.polyval(poly_pars, _v0)
-                    if _v0 > 0.0 and abs(pressure) < min_abs_pressure:
-                        min_abs_pressure = abs(pressure)
-                        v0 = _v0
-
-            b0 = -(
-                3 * poly_pars[0] * v0**3 + 2 * poly_pars[1] * v0**2 + poly_pars[0] * v0
-            )
-            b1 = (
-                v0
-                * (9 * poly_pars[0] * v0**2 + 4 * poly_pars[1] * v0 + poly_pars[0])
-                / b0
-            )
-
-            init_pars[jobtype] = [b0, b1, v0]
+            # poly_pars = np.polyfit(
+            #     self.results[jobtype]["volume"],
+            #     np.array(self.results[jobtype]["pressure"])
+            #     / np.array(self.results[jobtype]["volume"]),
+            #     deg=2,
+            # )
+            #
+            # radicand = poly_pars[1] ** 2 - 4.0 * poly_pars[0] * poly_pars[2]
+            # if radicand < 0.0:
+            #     v0 = self.results[jobtype]["volume"][
+            #         np.argmin(self.results[jobtype]["energy"])
+            #     ]
+            # else:
+            #     min_abs_pressure = 1e20
+            #     for i in range(2):
+            #         _v0 = (-poly_pars[1] + (-1) ** i * radicand ** (0.5)) / (
+            #             2.0 * poly_pars[0]
+            #         )
+            #         pressure = _v0 * np.polyval(poly_pars, _v0)
+            #         if _v0 > 0.0 and abs(pressure) < min_abs_pressure:
+            #             min_abs_pressure = abs(pressure)
+            #             v0 = _v0
+            #
+            # b0 = -(
+            #     3 * poly_pars[0] * v0**3 + 2 * poly_pars[1] * v0**2 + poly_pars[0] * v0
+            # )
+            # b1 = (
+            #     v0
+            #     * (9 * poly_pars[0] * v0**2 + 4 * poly_pars[1] * v0 + poly_pars[0])
+            #     / b0
+            # )
+            #
+            # init_pars[jobtype] = [b0, b1, v0]
 
         return init_pars
 
