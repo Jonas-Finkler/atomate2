@@ -60,6 +60,7 @@ class EquilibriumVolumeMaker(Maker):
     name: str = "Equilibrium Volume Maker"
     postprocessor: EOSPostProcessor = field(default_factory=MPMorphPVPostProcess)
     initial_strain: float | tuple[float, float] = 0.2
+    n_average_pressure: int = 10
     min_strain: float = 0.5
     max_attempts: int | None = 20
 
@@ -166,7 +167,16 @@ class EquilibriumVolumeMaker(Maker):
 
             working_outputs["relax"]["energy"].append(md_job.output.output.energy)
             working_outputs["relax"]["volume"].append(md_job.output.structure.volume)
-            working_outputs["relax"]["stress"].append(md_job.output.output.stress)
+            # working_outputs["relax"]["stress"].append(md_job.output.output.stress)
+            trajectory = md_job.output.vasp_objects.trajectory
+            print(trajectory)
+            trajectory = trajectory[-self.n_average_pressure :]
+            stresses = [np.array([frame['stress'] for frame in trajectory.frame_properties])]
+            print(stresses)
+            stress = np.mean(stresses, axis=0)
+            working_outputs["relax"]["stress"].append(stress.tolist())
+
+
             eos_jobs.append(md_job)
 
         recursive = self.make(
